@@ -50,6 +50,7 @@ class _FormUpdateIncomeScreenState extends State<FormUpdateIncomeScreen> {
         name: _nameController.text,
         amount: int.parse(_amountController.text),
         isRecurring: _isRecurring,
+        isEarned: widget.income.isEarned,
         frequency: _frequency,
         accountId: widget.income.accountId,
         date: DateFormat('yyyy/MM/dd').parse(_dateController.text),

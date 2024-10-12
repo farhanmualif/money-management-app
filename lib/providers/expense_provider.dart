@@ -11,23 +11,22 @@ import 'package:provider/provider.dart';
 
 class ExpenseProvider with ChangeNotifier {
   List<Expense> _expenses = [];
-  bool _isLoading = false;
-  final _storage = const FlutterSecureStorage();
-
   List<Expense> get expenses => _expenses;
+
+  bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   String? _error;
   String? get error => _error;
 
-  var storage = const FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage();
 
   Future<void> fetchExpenses() async {
     _isLoading = true;
     notifyListeners();
     try {
       final baseUrl = dotenv.env['BASE_URL'];
-      final token = await storage.read(key: 'token');
+      final token = await _storage.read(key: 'token');
       final url = Uri.parse('$baseUrl/expence');
       final response = await http.get(
         url,
@@ -36,6 +35,7 @@ class ExpenseProvider with ChangeNotifier {
           'Authorization': 'Bearer $token',
         },
       );
+
       final jsonData = jsonDecode(response.body);
       if (response.statusCode <= 300) {
         final List<Expense> expenses = (jsonData['data'] as List)
@@ -47,7 +47,7 @@ class ExpenseProvider with ChangeNotifier {
         throw Exception('Failed to load expenses');
       }
     } catch (e) {
-      print(e);
+      _error = e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -59,7 +59,7 @@ class ExpenseProvider with ChangeNotifier {
     notifyListeners();
     try {
       final baseUrl = dotenv.env['BASE_URL'];
-      final token = await storage.read(key: 'token');
+      final token = await _storage.read(key: 'token');
       final url = Uri.parse('$baseUrl/expence');
       final response = await http.post(
         url,
@@ -88,7 +88,8 @@ class ExpenseProvider with ChangeNotifier {
         throw Exception('Failed to add expense');
       }
     } catch (e) {
-      print(e);
+      _error = e.toString();
+      notifyListeners();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -100,7 +101,7 @@ class ExpenseProvider with ChangeNotifier {
     notifyListeners();
     try {
       final baseUrl = dotenv.env['BASE_URL'];
-      final token = await storage.read(key: 'token');
+      final token = await _storage.read(key: 'token');
       final url = Uri.parse('$baseUrl/expence/${expense.id}');
       final response = await http.put(
         url,
@@ -136,7 +137,7 @@ class ExpenseProvider with ChangeNotifier {
     notifyListeners();
     try {
       final baseUrl = dotenv.env['BASE_URL'];
-      final token = await storage.read(key: 'token');
+      final token = await _storage.read(key: 'token');
       final url = Uri.parse('$baseUrl/expence/$id');
       final response = await http.delete(url, headers: {
         'Content-Type': 'application/json',

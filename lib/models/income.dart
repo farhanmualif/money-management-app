@@ -6,6 +6,7 @@ class Income {
   int amount;
   DateTime date;
   bool isRecurring;
+  bool isEarned;
   String frequency;
   String accountId;
 
@@ -15,6 +16,7 @@ class Income {
     required this.amount,
     required this.date,
     required this.isRecurring,
+    required this.isEarned,
     required this.frequency,
     required this.accountId,
   });
@@ -26,6 +28,7 @@ class Income {
       amount: json['amount'],
       date: DateTime.parse(json['date']),
       isRecurring: json['isRecurring'],
+      isEarned: json['isEarned'],
       frequency: json['frequency'],
       accountId: json['account_id'],
     );

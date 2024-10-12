@@ -4,7 +4,9 @@ import 'package:money_app_new/themes/themes.dart';
 // ignore: must_be_immutable
 class CustomDropdown extends StatefulWidget {
   String type;
-  CustomDropdown({super.key, required this.type});
+  final ValueChanged<String?>? onChanged;
+
+  CustomDropdown({super.key, required this.type, this.onChanged});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -34,13 +36,12 @@ class _CustomDropdownState extends State<CustomDropdown> {
         onChanged: (String? newValue) {
           setState(() {
             selectedValue = newValue;
+            widget.onChanged?.call(newValue);
           });
         },
         items: <String>[
-          'Current ${widget.type}',
+          'All ${widget.type}',
           'Earned ${widget.type}',
-          'Expected ${widget.type}',
-          'All ${widget.type}'
         ].map<DropdownMenuItem<String>>((String value) {
           return DropdownMenuItem<String>(
             value: value,

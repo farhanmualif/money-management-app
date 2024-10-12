@@ -6,6 +6,7 @@ class Expense {
   DateTime date;
   int amount;
   bool isRequring;
+  bool isEarned;
   String frequency;
   String paymentMethod;
   String accountId;
@@ -18,6 +19,7 @@ class Expense {
     required this.date,
     required this.amount,
     required this.isRequring,
+    required this.isEarned,
     required this.frequency,
     required this.paymentMethod,
     required this.accountId,
@@ -32,6 +34,7 @@ class Expense {
       date: DateTime.parse(json['date']),
       amount: json['amount'],
       isRequring: json['isRequring'],
+      isEarned: json['isEarned'],
       frequency: json['frequency'] ?? '',
       paymentMethod: json['paymentMethod'] ?? '',
       accountId: json['accountId'] ?? '',

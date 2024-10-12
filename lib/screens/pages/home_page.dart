@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'package:money_app_new/helper/currency_format.dart';
@@ -14,8 +15,11 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: () =>
-          Provider.of<ProfileProvider>(context, listen: false).fetchProfile(),
+      onRefresh: () async {
+        Provider.of<ProfileProvider>(context, listen: false).fetchProfile();
+        Provider.of<UpcomingExpenseProvider>(context, listen: false)
+            .fetchUpcomingExpenses();
+      },
       child: Scaffold(
         appBar: _buildAppBar(context),
         body: Column(
@@ -155,15 +159,23 @@ class HomePage extends StatelessWidget {
             .toDouble() *
         1.1;
 
+    // Introduce a threshold value (e.g., 20% of the max value)
+    final threshold = maxY * 0.2;
+
     return LineChartData(
       lineBarsData: [
         LineChartBarData(
-          spots: provider.balanceHistory
-              .asMap()
-              .entries
-              .map((entry) =>
-                  FlSpot(entry.key.toDouble(), entry.value.balance.toDouble()))
-              .toList(),
+          spots: provider.balanceHistory.asMap().entries.map((entry) {
+            final spot =
+                FlSpot(entry.key.toDouble(), entry.value.balance.toDouble());
+            // Check if the spot's y-value is below the threshold
+            if (spot.y < threshold) {
+              // Create a new FlSpot with the y-value set to the threshold
+              return FlSpot(spot.x, threshold);
+            } else {
+              return spot;
+            }
+          }).toList(),
           isCurved: true,
           color: Colors.green,
           barWidth: 2,
@@ -223,7 +235,8 @@ class HomePage extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             Text(CurrencyFormat.convertToIdr(expense.amount),
                 style: const TextStyle(color: Colors.green)),
-            Text(expense.date, style: const TextStyle(color: Colors.grey)),
+            Text(DateFormat('yyyy-MM-dd').format(DateTime.parse(expense.date)),
+                style: const TextStyle(color: Colors.grey)),
           ],
         ),
       ),

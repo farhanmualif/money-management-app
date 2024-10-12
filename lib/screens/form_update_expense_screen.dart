@@ -65,6 +65,7 @@ class _FormUpdateExpenseScreenState extends State<FormUpdateExpenseScreen> {
         amount: int.parse(_amountController.text),
         isRequring: _isRecurring,
         frequency: _frequency,
+        isEarned: widget.expense.isEarned,
         accountId: widget.expense.accountId,
         paymentMethod: widget.expense.paymentMethod,
         date: DateFormat('yyyy/MM/dd').parse(_dateController.text),

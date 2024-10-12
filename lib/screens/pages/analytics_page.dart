@@ -55,6 +55,7 @@ class IncomeTab extends StatefulWidget {
 class _IncomeTabState extends State<IncomeTab> {
   int touchedIndex = -1;
   List<Income>? _incomes;
+  String? _selectedDropdownValue = 'All Income';
   final List<Color> _rainbowColors = [
     Colors.redAccent,
     Colors.orangeAccent,
@@ -69,16 +70,32 @@ class _IncomeTabState extends State<IncomeTab> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadIncomes();
+      _loadIncomes(null);
     });
   }
 
-  Future<void> _loadIncomes() async {
+  Future<void> _loadIncomes(String? selectedDropdownValue) async {
     final incomeProvider = Provider.of<IncomeProvider>(context, listen: false);
     await incomeProvider.fetchIncomes();
     if (mounted) {
       setState(() {
         _incomes = incomeProvider.incomes;
+        _selectedDropdownValue = selectedDropdownValue;
+        // Filter incomes based on the selected dropdown value
+        if (selectedDropdownValue != null) {
+          switch (selectedDropdownValue) {
+            case 'All Income':
+              _incomes = _incomes?.toList();
+              break;
+            case 'Earned Income':
+              _incomes = _incomes?.where((income) => income.isEarned).toList();
+              break;
+
+            default:
+              // Handle default case or unknown value
+              break;
+          }
+        }
         // Sort incomes by amount in descending order
         _incomes?.sort((a, b) => b.amount.compareTo(a.amount));
       });
@@ -92,15 +109,22 @@ class _IncomeTabState extends State<IncomeTab> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: _loadIncomes,
+      onRefresh: () => _loadIncomes(_selectedDropdownValue),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Container(
-              margin: const EdgeInsets.all(20),
-              child: CustomDropdown(
-                type: 'Income',
-              )),
+            margin: const EdgeInsets.all(20),
+            child: CustomDropdown(
+              type: 'Income',
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedDropdownValue = newValue;
+                  _loadIncomes(newValue);
+                });
+              },
+            ),
+          ),
           Expanded(
             flex: 2,
             child: _incomes == null
@@ -176,7 +200,7 @@ class _IncomeTabState extends State<IncomeTab> {
           color: _getColor(entry.key),
           value: entry.value.amount.toDouble(),
           title:
-              '${CurrencyFormat.convertToIdr(entry.value.amount)}\n${percentage.toStringAsFixed(2)}%',
+              '${CurrencyFormat.convertToIdr(entry.value.amount)} \n${percentage.toStringAsFixed(2)}%',
           radius: radius,
           titleStyle: TextStyle(
             fontSize: fontSize,
@@ -185,11 +209,6 @@ class _IncomeTabState extends State<IncomeTab> {
         );
       }).toList();
     }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
 
@@ -337,6 +356,8 @@ class ExpenseTab extends StatefulWidget {
 class _ExpenseTabState extends State<ExpenseTab> {
   int touchedIndex = -1;
   List<Expense>? _expenses;
+  String? _selectedDropdownValue =
+      'All Expense'; // Atur nilai awal _selectedDropdownValue
   final List<Color> _rainbowColors = [
     Colors.redAccent,
     Colors.orangeAccent,
@@ -362,6 +383,25 @@ class _ExpenseTabState extends State<ExpenseTab> {
     if (mounted) {
       setState(() {
         _expenses = expenseProvider.expenses;
+        // Atur nilai awal _selectedDropdownValue
+        // Filter expenses based on the selected dropdown value
+        if (_selectedDropdownValue != null) {
+          switch (_selectedDropdownValue) {
+            case 'All Expense':
+              _expenses = _expenses?.toList();
+              break;
+            case 'Earned Expense':
+              _expenses = _expenses
+                  ?.where((expense) => expense.isEarned == true)
+                  .toList();
+              debugPrint("check expense $_expenses");
+              break;
+            default:
+              // Handle default case or unknown value
+              break;
+          }
+        }
+        // Sort expenses by amount in descending order
         _expenses?.sort((a, b) => b.amount.compareTo(a.amount));
       });
     }
@@ -374,12 +414,22 @@ class _ExpenseTabState extends State<ExpenseTab> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: _loadExpenses,
+      onRefresh: () => _loadExpenses(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Container(
-          //     margin: const EdgeInsets.all(20), child: const CustomDropdown()),
+          Container(
+            margin: const EdgeInsets.all(20),
+            child: CustomDropdown(
+              type: 'Expense',
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedDropdownValue = newValue;
+                  _loadExpenses();
+                });
+              },
+            ),
+          ),
           Expanded(
             flex: 2,
             child: _expenses == null

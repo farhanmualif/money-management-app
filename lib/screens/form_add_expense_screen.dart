@@ -71,6 +71,7 @@ class _FormAddIExpenseScreenState extends State<FormAddIExpenseScreen> {
         paymentMethod: _paymentMethodController.text,
         accountId: "", // Anda perlu mengisi accountId yang sesuai
         date: _expectedDate ?? DateTime.now(),
+        isEarned: false,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

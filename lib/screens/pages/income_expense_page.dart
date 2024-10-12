@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:money_app_new/helper/currency_format.dart';
+import 'package:money_app_new/models/expense.dart';
 import 'package:money_app_new/models/income.dart';
 import 'package:money_app_new/providers/expected_expense_provider.dart';
 import 'package:money_app_new/providers/expected_income_provider.dart';
@@ -187,7 +189,7 @@ class IncomeListItem extends StatelessWidget {
             child: Icon(Icons.payment, color: Colors.white),
           ),
           title: Text(income.name),
-          subtitle: Text(income.date.toString()),
+          subtitle: Text(DateFormat('yyyy-MM-dd').format(income.date)),
           trailing: Text(
             CurrencyFormat.convertToIdr(income.amount),
             style: const TextStyle(
@@ -220,13 +222,6 @@ class ExpenseTab extends StatelessWidget {
         ),
       );
     });
-  }
-
-  Future<void> _refreshExpenses(BuildContext context) async {
-    await context.read<ExpenseProvider>().fetchExpenses();
-    if (context.mounted) {
-      await context.read<ExpectedExpenseProvider>().fetchExpectedExpense();
-    }
   }
 
   Widget _buildHeader() {
@@ -334,7 +329,7 @@ class ExpenseTab extends StatelessWidget {
 }
 
 class ExpenseListItem extends StatelessWidget {
-  final dynamic expense;
+  final Expense expense;
 
   const ExpenseListItem({super.key, required this.expense});
 
@@ -351,11 +346,12 @@ class ExpenseListItem extends StatelessWidget {
             child: Icon(Icons.payment, color: Colors.white),
           ),
           title: Text(expense.name),
-          subtitle: Text(expense.date.toString()),
+          subtitle: Text(DateFormat('yyyy-MM-dd').format(expense.date)),
           trailing: Text(
             CurrencyFormat.convertToIdr(expense.amount),
-            style: const TextStyle(
-                color: Colors.green, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: expense.isEarned == true ? Colors.green : Colors.red,
+                fontWeight: FontWeight.bold),
           ),
         ),
       ),

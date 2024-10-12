@@ -60,6 +60,7 @@ class _FormAddIncomeScreenState extends State<FormAddIncomeScreen> {
         name: _nameController.text,
         amount: int.parse(_amountController.text),
         isRecurring: _isRecurring,
+        isEarned: false,
         frequency: _frequency,
         accountId: "", // Anda perlu mengisi accountId yang sesuai
         date: _expectedDate ?? DateTime.now(),

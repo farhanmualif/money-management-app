@@ -8,9 +8,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class UpcomingExpenseProvider with ChangeNotifier {
   List<UpcomingExpense> _upcomingExpenses = [];
-  bool _isLoading = false;
-
   List<UpcomingExpense> get upcomingExpenses => _upcomingExpenses;
+
+  bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   Future<void> fetchUpcomingExpenses() async {
