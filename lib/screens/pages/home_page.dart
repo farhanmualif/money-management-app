@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-
 import 'package:money_app_new/helper/currency_format.dart';
 import 'package:money_app_new/providers/balance_history_provider.dart';
 import 'package:money_app_new/providers/profile_provider.dart';

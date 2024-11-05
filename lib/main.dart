@@ -88,11 +88,11 @@ class MyApp extends StatelessWidget {
           final income = ModalRoute.of(context)!.settings.arguments as Income;
           return FormUpdateIncomeScreen(income: income);
         },
-        '/form_update_profile': (context) => FormUpdateProfileScreen(),
+        '/form_update_profile': (context) => const FormUpdateProfileScreen(),
         "/form_update_expense": (context) {
           final expense = ModalRoute.of(context)!.settings.arguments as Expense;
           return FormUpdateExpenseScreen(expense: expense);
-        },
+        }, 
         "/detail_expense": (context) {
           final expense = ModalRoute.of(context)!.settings.arguments as Expense;
           return DetailExpense(expense: expense);

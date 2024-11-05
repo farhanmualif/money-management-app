@@ -271,20 +271,20 @@ class GoalTab extends StatelessWidget {
       padding: const EdgeInsets.all(20.0),
       child: Row(
         children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(context).pushNamed("/coming_soon"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: const EdgeInsets.symmetric(
-                    vertical: 16.0, horizontal: 20.0),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('Calculator',
-                  style: TextStyle(color: Colors.white)),
-            ),
-          ),
+          // Expanded(
+          //   child: ElevatedButton(
+          //     onPressed: () => Navigator.of(context).pushNamed("/coming_soon"),
+          //     style: ElevatedButton.styleFrom(
+          //       backgroundColor: Colors.blue,
+          //       padding: const EdgeInsets.symmetric(
+          //           vertical: 16.0, horizontal: 20.0),
+          //       shape: RoundedRectangleBorder(
+          //           borderRadius: BorderRadius.circular(10)),
+          //     ),
+          //     child: const Text('Calculator',
+          //         style: TextStyle(color: Colors.white)),
+          //   ),
+          // ),
           Expanded(
             flex: 1,
             child: Container(),

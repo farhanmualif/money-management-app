@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:money_app_new/helper/currency_format.dart';
 import 'package:money_app_new/models/expense.dart';
-import 'package:money_app_new/models/expexted_expense.dart';
 import 'package:money_app_new/providers/expected_expense_provider.dart';
 import 'package:money_app_new/providers/expense_provider.dart';
-import 'package:money_app_new/providers/income_provider.dart';
 import 'package:money_app_new/providers/profile_provider.dart';
 import 'package:money_app_new/themes/themes.dart';
 import 'package:provider/provider.dart';
@@ -259,6 +257,7 @@ class _DetailExpenseState extends State<DetailExpense> {
     var expectedExpenseProvider =
         Provider.of<ExpectedExpenseProvider>(context, listen: false);
     await expenseProvider.earned(context, expenseId);
+    debugPrint("cek expense error: ${expenseProvider.error}");
 
     if (expenseProvider.error != null) {
       if (mounted) {
@@ -278,7 +277,7 @@ class _DetailExpenseState extends State<DetailExpense> {
           backgroundColor: Colors.green,
         ),
       );
-      await Navigator.of(context).pushReplacementNamed("/income_expanse");
+      Navigator.of(context).pop();
       await profileProvider.fetchProfile();
       await expectedExpenseProvider.fetchExpectedExpense();
       await expenseProvider.fetchExpenses();

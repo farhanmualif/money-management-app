@@ -17,14 +17,14 @@ class ExpectedExpenseResponse {
 
 class ExpectedExpenseData {
   String accountId;
-  int expectedExpense;
+  int? expectedExpense;
 
   ExpectedExpenseData({required this.accountId, required this.expectedExpense});
 
   factory ExpectedExpenseData.fromJson(Map<String, dynamic> json) {
     return ExpectedExpenseData(
       accountId: json['accountId'],
-      expectedExpense: json['expectedExpence'],
+      expectedExpense: json['expectedExpence'] ,
     );
   }
 }

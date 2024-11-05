@@ -7,7 +7,8 @@ import 'package:money_app_new/providers/goal_provider.dart';
 import 'package:money_app_new/providers/profile_provider.dart';
 import 'package:money_app_new/providers/transaction_provider.dart';
 import 'package:money_app_new/providers/upcoming_expense_provider.dart';
-import 'package:money_app_new/screens/cooming_soon_screen.dart';
+// import 'package:money_app_new/screens/cooming_soon_screen.dart';
+import 'package:money_app_new/screens/pages/account_page.dart';
 import 'package:money_app_new/screens/pages/analytics_page.dart';
 import 'package:money_app_new/screens/pages/home_page.dart';
 import 'package:money_app_new/screens/pages/middle_page.dart';
@@ -27,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [
     const HomePage(),
-    const ComingSoonScreen(),
+    const AccountPage(),
     const MiddlePage(),
     const AnalyticsPage(),
     const ProfilePage(),
@@ -63,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: IconButton(
                 onPressed: () {
-                  Navigator.of(context).pushNamed('/account_page');
+                  Navigator.of(context).pushNamed('/income_expanse');
                 },
                 icon: const Icon(Icons.swap_vert, color: Colors.white)),
           ),
@@ -75,11 +76,15 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home, 0),
-              _buildNavItem(Icons.account_balance_wallet, 1),
+              _buildNavItem(icon: Icons.home, index: 0, label: 'Home'),
+              _buildNavItem(
+                  icon: Icons.account_balance_wallet,
+                  index: 1,
+                  label: 'Account'),
               const SizedBox(width: 48),
-              _buildNavItem(Icons.bar_chart, 3),
-              _buildNavItem(Icons.person, 4),
+              _buildNavItem(
+                  icon: Icons.bar_chart, index: 3, label: 'Analytics'),
+              _buildNavItem(icon: Icons.person, index: 4, label: 'Profile'),
             ],
           ),
         ),
@@ -87,11 +92,27 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, int index) {
-    return IconButton(
-      icon: Icon(icon),
-      onPressed: () => setState(() => _selectedIndex = index),
-      color: _selectedIndex == index ? AppColors.primary : Colors.grey,
+  Widget _buildNavItem(
+      {required IconData icon, required int index, required String label}) {
+    bool isSelected = _selectedIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _selectedIndex = index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? AppColors.primary : Colors.grey,
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: isSelected ? AppColors.primary : Colors.grey,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
