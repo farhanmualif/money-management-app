@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money_app_new/screens/currency_converter_screen.dart';
 import 'package:money_app_new/screens/pages/income_expense_page.dart';
 import 'package:money_app_new/themes/themes.dart';
 
@@ -77,24 +78,24 @@ class AccountPage extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.of(context)
-                                      .pushNamed("/coming_soon");
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  minimumSize: const Size(double.infinity, 50),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: const Text(
-                                  '+ ADD',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
+                              // ElevatedButton(
+                              //   onPressed: () {
+                              //     Navigator.of(context)
+                              //         .pushNamed("/coming_soon");
+                              //   },
+                              //   style: ElevatedButton.styleFrom(
+                              //     backgroundColor: AppColors.primary,
+                              //     minimumSize: const Size(double.infinity, 50),
+                              //     shape: RoundedRectangleBorder(
+                              //       borderRadius: BorderRadius.circular(10),
+                              //     ),
+                              //   ),
+                              //   child: const Text(
+                              //     '+ ADD',
+                              //     style: TextStyle(color: Colors.white),
+                              //   ),
+                              // ),
+                              // const SizedBox(height: 10),
                               ElevatedButton(
                                 onPressed: () {
                                   Navigator.of(context).push(
@@ -119,8 +120,9 @@ class AccountPage extends StatelessWidget {
                               const SizedBox(height: 10),
                               ElevatedButton(
                                 onPressed: () {
-                                  Navigator.of(context)
-                                      .pushNamed("/coming_soon");
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                      builder: (context) =>
+                                          const CurrencyConverterScreen()));
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
@@ -130,7 +132,7 @@ class AccountPage extends StatelessWidget {
                                   ),
                                 ),
                                 child: const Text(
-                                  '⟪ ⟫ TRANSFER',
+                                  '⟪ ⟫ CURRENCY CONVERSION',
                                   style: TextStyle(color: Colors.white),
                                 ),
                               ),
