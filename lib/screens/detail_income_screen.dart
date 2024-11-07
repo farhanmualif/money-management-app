@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:money_app_new/helper/currency_format.dart';
 import 'package:money_app_new/models/income.dart';
+import 'package:money_app_new/providers/expected_income_provider.dart';
 import 'package:money_app_new/providers/income_provider.dart';
 import 'package:money_app_new/providers/profile_provider.dart';
 import 'package:money_app_new/themes/themes.dart';
@@ -262,6 +263,8 @@ class _DetailIncomeState extends State<DetailIncome> {
     try {
       final incomeProvider =
           Provider.of<IncomeProvider>(context, listen: false);
+      final expectedIncomeProvider =
+          Provider.of<ExpectedIncomeProvider>(context, listen: false);
       final profileProvider =
           Provider.of<ProfileProvider>(context, listen: false);
 
@@ -271,6 +274,10 @@ class _DetailIncomeState extends State<DetailIncome> {
         _showSnackBar(incomeProvider.error!, Colors.red);
         return;
       }
+
+      // Panggil fetchExpectedIncome setelah income berhasil ditandai
+      await expectedIncomeProvider.fetchExpectedIncome();
+
       if (mounted) {
         _showSnackBar("Income Earned Successfully", Colors.green);
         Navigator.of(context).pop();
@@ -303,6 +310,8 @@ class _DetailIncomeState extends State<DetailIncome> {
             Provider.of<IncomeProvider>(context, listen: false);
         var profileProvider =
             Provider.of<ProfileProvider>(context, listen: false);
+        final expectedIncomeProvider =
+            Provider.of<ExpectedIncomeProvider>(context, listen: false);
         return AlertDialog(
           title: const Text("Konfirmasi Hapus"),
           content: const Text("Apakah Anda yakin ingin menghapus data ini?"),
@@ -318,6 +327,9 @@ class _DetailIncomeState extends State<DetailIncome> {
               onPressed: () async {
                 _deleteIncome(widget.income.id);
                 Navigator.of(context).pop();
+
+                // Panggil fetchExpectedIncome setelah penghapusan
+                await expectedIncomeProvider.fetchExpectedIncome();
                 await incomeProvider.fetchIncomes();
                 await profileProvider.fetchProfile();
               },

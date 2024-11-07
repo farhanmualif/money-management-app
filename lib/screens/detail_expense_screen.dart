@@ -283,7 +283,6 @@ class _DetailExpenseState extends State<DetailExpense> {
           Provider.of<ExpectedExpenseProvider>(context, listen: false);
 
       await expenseProvider.earned(context, expenseId);
-      debugPrint("cek expense error: ${expenseProvider.error}");
 
       if (!mounted) return;
 

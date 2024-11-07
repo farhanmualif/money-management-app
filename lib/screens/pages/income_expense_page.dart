@@ -11,9 +11,14 @@ import 'package:money_app_new/providers/profile_provider.dart';
 import 'package:money_app_new/themes/themes.dart';
 import 'package:provider/provider.dart';
 
-class IncomeExpensePage extends StatelessWidget {
+class IncomeExpensePage extends StatefulWidget {
   const IncomeExpensePage({super.key});
 
+  @override
+  State<IncomeExpensePage> createState() => _IncomeExpensePageState();
+}
+
+class _IncomeExpensePageState extends State<IncomeExpensePage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -206,12 +211,14 @@ class ExpenseTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ExpenseProvider, ExpectedExpenseProvider>(
-        builder: (context, expenseProvider, expectedExpenseProvider, child) {
+    return Consumer3<ExpenseProvider, ExpectedExpenseProvider, ProfileProvider>(
+        builder: (context, expenseProvider, expectedExpenseProvider,
+            profileProvider, child) {
       return RefreshIndicator(
         onRefresh: () async {
-          expenseProvider.fetchExpenses();
-          expectedExpenseProvider.fetchExpectedExpense();
+          await expenseProvider.fetchExpenses();
+          await expectedExpenseProvider.fetchExpectedExpense();
+          await profileProvider.fetchProfile();
         },
         child: CustomScrollView(
           slivers: [
@@ -260,6 +267,7 @@ class ExpenseTab extends StatelessWidget {
   }
 
   Widget _buildHeaderItem(String title, int amount) {
+    print("Header Item Called: $title, Amount: $amount");
     return Column(
       children: [
         Text(
