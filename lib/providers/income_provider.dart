@@ -17,6 +17,10 @@ class IncomeProvider with ChangeNotifier {
   bool get isUpdating => _isUpdating;
   String? get error => _error;
 
+  void setError(String? msg) {
+    _error = msg;
+  }
+
   final _storage = const FlutterSecureStorage();
 
   Future<void> fetchIncomes() async {
@@ -95,6 +99,7 @@ class IncomeProvider with ChangeNotifier {
 
   Future<void> earned(BuildContext context, String id) async {
     try {
+      setError(null);
       final baseUrl = dotenv.env['BASE_URL'];
       final token = await _storage.read(key: 'token');
 
@@ -107,7 +112,6 @@ class IncomeProvider with ChangeNotifier {
       );
 
       var jsonBody = jsonDecode(response.body);
- 
 
       if (response.statusCode >= 300) {
         _error = jsonBody['message'];

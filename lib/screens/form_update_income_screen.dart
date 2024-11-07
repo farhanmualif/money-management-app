@@ -42,6 +42,7 @@ class _FormUpdateIncomeScreenState extends State<FormUpdateIncomeScreen> {
   }
 
   Future<void> _confirmForm() async {
+    debugPrint("date controller: ${_dateController.text}");
     if (_formKey.currentState!.validate()) {
       final incomeProvider =
           Provider.of<IncomeProvider>(context, listen: false);
@@ -65,7 +66,7 @@ class _FormUpdateIncomeScreenState extends State<FormUpdateIncomeScreen> {
                 backgroundColor: Colors.green),
           );
           Navigator.of(context).pushReplacementNamed("/income_expanse");
-        await incomeProvider.fetchIncomes();
+          await incomeProvider.fetchIncomes();
         }
       } catch (error) {
         if (mounted) {

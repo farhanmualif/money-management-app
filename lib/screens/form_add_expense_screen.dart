@@ -86,8 +86,9 @@ class _FormAddIExpenseScreenState extends State<FormAddIExpenseScreen> {
             ),
           );
           _clearForm();
-          Navigator.of(context, rootNavigator: true)
-              .pushNamedAndRemoveUntil("/income_expanse", (route) => false);
+          // Navigator.of(context, rootNavigator: true)
+          //     .pushNamedAndRemoveUntil("/income_expanse", (route) => false);
+          Navigator.of(context).pop();
           await expenseProvider.fetchExpenses();
           await expectedExpense.fetchExpectedExpense();
           await profileProfider.fetchProfile();
