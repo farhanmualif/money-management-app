@@ -21,7 +21,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkAuthentication() async {
     final token = await storage.read(key: 'token');
-    print("token: $token");
 
     if (token == null || token.isEmpty) {
       _navigateTo(const LoginScreen());
@@ -63,9 +62,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
 // Helper function to handle navigation
   void _navigateTo(Widget screen) {
-    Navigator.pushReplacement(
+    Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => screen),
+      (route) => false,
     );
   }
 
@@ -78,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: AppColors.primary,
+      backgroundColor: AppColors.primaryColor,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

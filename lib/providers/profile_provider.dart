@@ -109,6 +109,4 @@ class ProfileProvider with ChangeNotifier {
       notifyListeners(); // Notify listeners when loading is done
     }
   }
-
-  
 }

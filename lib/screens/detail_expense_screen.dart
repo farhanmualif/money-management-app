@@ -18,256 +18,310 @@ class DetailExpense extends StatefulWidget {
 }
 
 class _DetailExpenseState extends State<DetailExpense> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
-
-  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _amountController.dispose();
-    _dateController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Consumer<ExpenseProvider>(
-              builder: (context, expenseProvider, child) {
-                if (expenseProvider.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return Stack(
-                  children: [
-                    Container(
-                      height: 400, // Atur tinggi container sesuai kebutuhan
-                      decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.centerRight,
-                            end: Alignment.centerLeft,
-                            colors: [
-                              Color.fromARGB(255, 68, 74, 176),
-                              Color(0xFF1F2462),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(20))),
-                      child: SafeArea(
-                        child: AppBar(
-                          iconTheme: const IconThemeData(color: Colors.white),
-                          backgroundColor: Colors.transparent,
-                          elevation: 0,
-                          centerTitle: true,
+      backgroundColor: AppColors.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: AppColors.primaryColor,
+        title: const Text(
+          'Expense Detail',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Consumer<ExpenseProvider>(
+        builder: (context, expenseProvider, child) {
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryColor,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        widget.expense.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height,
-                      child: Center(
-                        child: Container(
-                          width: MediaQuery.of(context).size.width * 0.9,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(10)),
-                              boxShadow: [
-                                BoxShadow(
-                                    color: Colors.grey.shade300,
-                                    blurRadius: 5,
-                                    offset: const Offset(0, 5)),
-                              ]),
-                          padding: const EdgeInsets.all(15),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "NAME",
-                                  style: TextStyle(
-                                      fontSize: 15,
-                                      color:
-                                          Color.fromARGB(255, 141, 141, 141)),
-                                ),
-                                const SizedBox(
-                                  height: 8,
-                                ),
-                                Text(
-                                  widget.expense.name,
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          Color.fromARGB(255, 141, 141, 141)),
-                                ),
-                                const SizedBox(height: 20),
-                                const Text(
-                                  "AMOUNT",
-                                  style: TextStyle(
-                                      fontSize: 15,
-                                      color:
-                                          Color.fromARGB(255, 141, 141, 141)),
-                                ),
-                                const SizedBox(
-                                  height: 8,
-                                ),
-                                Text(
-                                  CurrencyFormat.convertToIdr(
-                                      widget.expense.amount),
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          Color.fromARGB(255, 141, 141, 141)),
-                                ),
-                                const SizedBox(height: 20),
-                                const Text(
-                                  "EXPECTED DATE",
-                                  style: TextStyle(
-                                      fontSize: 15,
-                                      color:
-                                          Color.fromARGB(255, 141, 141, 141)),
-                                ),
-                                const SizedBox(
-                                  height: 8,
-                                ),
-                                Text(
-                                  DateFormat('yyyy-MM-dd')
-                                      .format(widget.expense.date),
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          Color.fromARGB(255, 141, 141, 141)),
-                                ),
-                                const SizedBox(height: 20),
-                                const Text(
-                                  "REQURING",
-                                  style: TextStyle(
-                                      fontSize: 15,
-                                      color:
-                                          Color.fromARGB(255, 141, 141, 141)),
-                                ),
-                                const SizedBox(
-                                  height: 8,
-                                ),
-                                Text(
-                                  widget.expense.isRequring
-                                      ? "Recurring"
-                                      : "Not Recurring",
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          Color.fromARGB(255, 141, 141, 141)),
-                                ),
-                                const SizedBox(height: 20),
-                                const Text(
-                                  "FREQUENCY",
-                                  style: TextStyle(
-                                      fontSize: 15,
-                                      color:
-                                          Color.fromARGB(255, 141, 141, 141)),
-                                ),
-                                const SizedBox(
-                                  height: 8,
-                                ),
-                                Text(
-                                  widget.expense.frequency,
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          Color.fromARGB(255, 141, 141, 141)),
-                                ),
-                                const SizedBox(
-                                  height: 25,
-                                ),
-                                Center(
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      _expenseEarned(widget.expense.id);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      minimumSize: const Size(300, 40),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(5),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      ' EARNED',
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 15),
-                                    ),
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: _confirmDelete,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color.fromARGB(
-                                              255, 174, 0, 32),
-                                          minimumSize: const Size(300, 40),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5),
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          'DELETE',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pushNamed(
-                                              "/form_update_expense",
-                                              arguments: widget.expense);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color.fromARGB(
-                                              255, 243, 135, 73),
-                                          minimumSize: const Size(20, 40),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5),
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          'UPDATE',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              ],
+                      const SizedBox(height: 8),
+                      Text(
+                        CurrencyFormat.convertToIdr(widget.expense.amount),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            _buildDetailRow(
+                              'Expected Date',
+                              DateFormat('dd MMMM yyyy')
+                                  .format(widget.expense.date),
+                              Icons.calendar_today,
+                            ),
+                            const Divider(height: 1),
+                            _buildDetailRow(
+                              'Status',
+                              widget.expense.isEarned ? 'Paid' : 'Not Earned',
+                              Icons.check_circle,
+                              valueColor: widget.expense.isEarned
+                                  ? AppColors.greenColor
+                                  : AppColors.redColor,
+                              showBadge: true,
+                            ),
+                            const Divider(height: 1),
+                            _buildDetailRow(
+                              'Payment Method',
+                              widget.expense.paymentMethod,
+                              Icons.payment,
+                            ),
+                            const Divider(height: 1),
+                            _buildDetailRow(
+                              'Recurring',
+                              widget.expense.isRequring ? 'Yes' : 'No',
+                              Icons.repeat,
+                            ),
+                            if (widget.expense.isRequring) ...[
+                              const Divider(height: 1),
+                              _buildDetailRow(
+                                'Frequency',
+                                widget.expense.frequency,
+                                Icons.access_time,
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                      const SizedBox(height: 32),
+                      _buildActionButtons(expenseProvider),
+                    ],
+                  ),
+                ),
+              ],
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value,
+    IconData icon, {
+    Color? valueColor,
+    bool showBadge = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.primaryColor, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              if (showBadge)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: (valueColor ?? Colors.black87).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      color: valueColor ?? Colors.black87,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: valueColor ?? Colors.black87,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(ExpenseProvider expenseProvider) {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton(
+            onPressed:
+                _isLoading ? null : () => _expenseEarned(widget.expense.id),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.greenColor,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'MARK AS PAID',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
+                        color: Colors.white),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: _confirmDelete,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.redColor,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'DELETE',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
+                        color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: SizedBox(
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      "/form_update_expense",
+                      arguments: widget.expense,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColor,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'UPDATE',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
+                        color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
   void _expenseEarned(String expenseId) async {
+    if (expenseId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Invalid expense ID"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (!mounted) return;
 
     try {
@@ -281,6 +335,7 @@ class _DetailExpenseState extends State<DetailExpense> {
           Provider.of<ProfileProvider>(context, listen: false);
       var expectedExpenseProvider =
           Provider.of<ExpectedExpenseProvider>(context, listen: false);
+      debugPrint("id expense $expenseId");
 
       await expenseProvider.earned(context, expenseId);
 
@@ -310,8 +365,8 @@ class _DetailExpenseState extends State<DetailExpense> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Terjadi Kesalahan"),
+        SnackBar(
+          content: Text("Error: $e"),
           backgroundColor: Colors.red,
         ),
       );

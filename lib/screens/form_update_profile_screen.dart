@@ -49,20 +49,147 @@ class _FormUpdateProfileScreenState extends State<FormUpdateProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        title: const Text("Update Profile"),
+        title: const Text(
+          "Update Profile",
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
+        backgroundColor: AppColors.primaryColor,
+        elevation: 0,
       ),
       body: Consumer<ProfileProvider>(
         builder: (context, profileProvider, _) {
-          return Center(
-            child: SingleChildScrollView(
-              child: profileProvider.isLoading
-                  ? const CircularProgressIndicator(color: AppColors.primary)
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: _buildProfileForm(context, profileProvider),
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryColor,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
                     ),
+                  ),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.white.withOpacity(0.9),
+                        child: Icon(
+                          Icons.person_outline,
+                          size: 50,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Update Your Profile',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildInputField(
+                              controller: _nameAccountController,
+                              label: "Full Name",
+                              hint: "Enter your full name",
+                              icon: Icons.person_outline,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Name is required";
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20),
+                            _buildInputField(
+                              controller: _emailAccountController,
+                              label: "Email",
+                              hint: "Enter your email",
+                              icon: Icons.email_outlined,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Email is required";
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20),
+                            _buildInputField(
+                              controller: _phoneNumberController,
+                              label: "Phone Number",
+                              hint: "Enter your phone number",
+                              icon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Phone number is required";
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 32),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 55,
+                              child: ElevatedButton(
+                                onPressed: () =>
+                                    _handleSubmit(context, profileProvider),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: profileProvider.isLoading
+                                    ? const SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'UPDATE PROFILE',
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 1,
+                                            color: Colors.white),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -70,71 +197,69 @@ class _FormUpdateProfileScreenState extends State<FormUpdateProfileScreen> {
     );
   }
 
-  Widget _buildProfileForm(
-      BuildContext context, ProfileProvider profileProvider) {
-    return Card(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      elevation: 5,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTextField(_nameAccountController, "Name", (value) {
-                if (value == null || value.isEmpty) {
-                  return "Name is required";
-                }
-                return null;
-              }),
-              const SizedBox(height: 10),
-              _buildTextField(_emailAccountController, "Email", (value) {
-                if (value == null || value.isEmpty) {
-                  return "Email is required";
-                }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                    .hasMatch(value)) {
-                  return "Enter a valid email";
-                }
-                return null;
-              }),
-              const SizedBox(height: 10),
-              _buildTextField(_phoneNumberController, "Phone", (value) {
-                if (value == null || value.isEmpty) {
-                  return "Phone number is required";
-                }
-                if (!RegExp(r'^\+?[0-9]{10,14}$').hasMatch(value)) {
-                  return "Enter a valid phone number";
-                }
-                return null;
-              }),
-              const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: () => _handleSubmit(context, profileProvider),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                child:
-                    const Text('Save', style: TextStyle(color: Colors.white)),
-              ),
-            ],
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    bool enabled = true,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textColor.withOpacity(0.7),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller, String hint,
-      String? Function(String?) validator) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(hintText: hint),
-      validator: validator,
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          enabled: enabled,
+          keyboardType: keyboardType,
+          validator: validator,
+          style: const TextStyle(
+            fontSize: 16,
+            color: AppColors.textColor,
+          ),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: AppColors.textColor.withOpacity(0.5),
+            ),
+            prefixIcon: Icon(icon, color: AppColors.primaryColor),
+            filled: true,
+            fillColor: enabled ? Colors.white : Colors.grey[100],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: AppColors.primaryColor.withOpacity(0.1),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.primaryColor,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.redColor,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

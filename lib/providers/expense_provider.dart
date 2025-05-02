@@ -175,18 +175,20 @@ class ExpenseProvider with ChangeNotifier {
       );
 
       var jsonBody = jsonDecode(response.body);
-      print("debug expense earned: $jsonBody");
 
-
-
-      _handleResponse(response, _error ?? 'Failed to mark income as earned');
+      // Cek status response
+      if (!jsonBody['status']) {
+        _error = jsonBody['message'];
+        notifyListeners();
+        return;
+      }
 
       await fetchExpenses();
-
       await Provider.of<ExpectedExpenseProvider>(context, listen: false)
           .fetchExpectedExpense();
     } catch (e) {
-      _handleError('Error marking income as earned', e);
+      _error = e.toString();
+      notifyListeners();
     }
   }
 

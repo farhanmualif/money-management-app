@@ -23,8 +23,8 @@ class _FormUpdateExpenseScreenState extends State<FormUpdateExpenseScreen> {
   late final TextEditingController _dateController;
   late bool _isRecurring;
   late String _frequency;
+  bool _isLoading = false;
 
-  // Definisikan list frekuensi yang valid
   final List<String> _validFrequencies = ["Daily", "Weekly", "Monthly"];
 
   @override
@@ -36,19 +36,308 @@ class _FormUpdateExpenseScreenState extends State<FormUpdateExpenseScreen> {
     _dateController = TextEditingController(
         text: DateFormat('yyyy/MM/dd').format(widget.expense.date));
     _isRecurring = widget.expense.isRequring;
-
-    // Pastikan _frequency selalu memiliki nilai yang valid
     _frequency = _validFrequencies.contains(widget.expense.frequency)
         ? widget.expense.frequency
         : _validFrequencies.first;
   }
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _amountController.dispose();
-    _dateController.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: AppColors.primaryColor,
+        title: const Text(
+          'Update Expense',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: const Text(
+                'Update your expense details',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInputField(
+                      'Name',
+                      _nameController,
+                      'Enter expense name',
+                      Icons.description,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildInputField(
+                      'Amount',
+                      _amountController,
+                      'Enter amount',
+                      Icons.attach_money,
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildDatePicker(),
+                    const SizedBox(height: 24),
+                    _buildRecurringSection(),
+                    const SizedBox(height: 32),
+                    _buildUpdateButton(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller,
+    String hint,
+    IconData icon, {
+    TextInputType? keyboardType,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            color: AppColors.textColor.withOpacity(0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceColor,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            decoration: InputDecoration(
+              prefixIcon: Icon(icon, color: AppColors.primaryColor),
+              hintText: hint,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: AppColors.surfaceColor,
+            ),
+            validator: (value) =>
+                value?.isEmpty ?? true ? 'This field is required' : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDatePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'EXPECTED DATE',
+          style: TextStyle(
+            color: AppColors.textColor.withOpacity(0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceColor,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: _dateController,
+            readOnly: true,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.calendar_today,
+                  color: AppColors.primaryColor),
+              hintText: 'Select date',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: AppColors.surfaceColor,
+            ),
+            onTap: () async {
+              FocusScope.of(context).requestFocus(FocusNode());
+              final DateTime? picked = await showDatePicker(
+                context: context,
+                initialDate:
+                    DateFormat('yyyy/MM/dd').parse(_dateController.text),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2101),
+              );
+              if (picked != null) {
+                setState(() => _dateController.text =
+                    DateFormat('yyyy/MM/dd').format(picked));
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecurringSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'RECURRING',
+          style: TextStyle(
+            color: AppColors.textColor.withOpacity(0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceColor,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              RadioListTile<bool>(
+                title: const Text('Non-Recurring'),
+                value: false,
+                groupValue: _isRecurring,
+                onChanged: (value) => setState(() => _isRecurring = value!),
+              ),
+              RadioListTile<bool>(
+                title: const Text('Recurring'),
+                value: true,
+                groupValue: _isRecurring,
+                onChanged: (value) => setState(() => _isRecurring = value!),
+              ),
+              if (_isRecurring) ...[
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: 'Frequency',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    value: _frequency,
+                    items: _validFrequencies.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (String? value) {
+                      if (value != null) setState(() => _frequency = value);
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUpdateButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _confirmForm,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryColor,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Text(
+                'UPDATE EXPENSE',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
+                    color: Colors.white),
+              ),
+      ),
+    );
   }
 
   Future<void> _confirmForm() async {
@@ -94,215 +383,5 @@ class _FormUpdateExpenseScreenState extends State<FormUpdateExpenseScreen> {
         }
       }
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: Stack(
-        children: [
-          _buildGradientBackground(),
-          _buildFormContent(),
-        ],
-      ),
-    );
-  }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      iconTheme: const IconThemeData(color: Colors.white),
-      backgroundColor: Colors.transparent,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerRight,
-            end: Alignment.centerLeft,
-            colors: [Color.fromARGB(255, 68, 74, 176), Color(0xFF1F2462)],
-          ),
-        ),
-      ),
-      title:
-          const Text("Update Expense", style: TextStyle(color: Colors.white)),
-    );
-  }
-
-  Widget _buildGradientBackground() {
-    return Container(
-      height: 400,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerRight,
-          end: Alignment.centerLeft,
-          colors: [Color.fromARGB(255, 68, 74, 176), Color(0xFF1F2462)],
-        ),
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(20)),
-      ),
-    );
-  }
-
-  Widget _buildFormContent() {
-    return Consumer<ExpenseProvider>(
-      builder: (context, expenseProvider, child) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height,
-          child: Center(
-            child: SingleChildScrollView(
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.9,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.shade300,
-                      blurRadius: 5,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(15),
-                child: expenseProvider.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _buildForm(),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildForm() {
-    return Form(
-      key: _formKey,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTextFormField("NAME", _nameController, "eg: Rent"),
-          const SizedBox(height: 20),
-          _buildTextFormField(
-              "AMOUNT", _amountController, "eg: 1000", TextInputType.number),
-          const SizedBox(height: 20),
-          _buildDatePicker(),
-          const SizedBox(height: 20),
-          _buildRecurringRadioButtons(),
-          _buildFrequencyDropdown(),
-          const SizedBox(height: 20),
-          _buildConfirmButton(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextFormField(
-      String label, TextEditingController controller, String hint,
-      [TextInputType? keyboardType]) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 15)),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          validator: (value) =>
-              value?.isEmpty ?? true ? 'This field is required' : null,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDatePicker() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Expected Date", style: TextStyle(fontSize: 15)),
-        TextFormField(
-          controller: _dateController,
-          decoration: const InputDecoration(
-            hintText: "eg: 2023/02/10",
-          ),
-          onTap: () async {
-            FocusScope.of(context).requestFocus(FocusNode());
-            final DateTime? picked = await showDatePicker(
-              context: context,
-              initialDate: DateFormat('yyyy/MM/dd').parse(_dateController.text),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2101),
-            );
-            if (picked != null) {
-              setState(() => _dateController.text =
-                  DateFormat('yyyy/MM/dd').format(picked));
-            }
-          },
-          validator: (value) =>
-              value?.isEmpty ?? true ? 'Please enter a date' : null,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRecurringRadioButtons() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Recurring", style: TextStyle(fontSize: 15)),
-        Column(
-          children: [
-            RadioListTile<bool>(
-              title: const Text('Non-Recurring'),
-              value: false,
-              groupValue: _isRecurring,
-              onChanged: (value) => setState(() => _isRecurring = value!),
-            ),
-            RadioListTile<bool>(
-              title: const Text('Recurring'),
-              value: true,
-              groupValue: _isRecurring,
-              onChanged: (value) => setState(() => _isRecurring = value!),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFrequencyDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Frequency", style: TextStyle(fontSize: 15)),
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          ),
-          value: _frequency,
-          items: _validFrequencies.map((String value) {
-            return DropdownMenuItem<String>(value: value, child: Text(value));
-          }).toList(),
-          onChanged: (String? value) {
-            if (value != null) setState(() => _frequency = value);
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildConfirmButton() {
-    return Consumer<ExpenseProvider>(
-      builder: (context, expenseProvider, child) {
-        return ElevatedButton(
-          onPressed: expenseProvider.isLoading ? null : _confirmForm,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            minimumSize: const Size(double.infinity, 50),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          ),
-          child: const Text('CONFIRM', style: TextStyle(color: Colors.white)),
-        );
-      },
-    );
   }
 }

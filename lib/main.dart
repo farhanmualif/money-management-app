@@ -29,7 +29,9 @@ import 'package:money_app_new/screens/home_screen.dart';
 import 'package:money_app_new/screens/pages/account_page.dart';
 import 'package:money_app_new/screens/pages/analytics_page.dart';
 import 'package:money_app_new/screens/pages/income_expense_page.dart';
+import 'package:money_app_new/screens/pages/profile_page.dart';
 import 'package:money_app_new/screens/splash_screen.dart';
+import 'package:money_app_new/themes/themes.dart';
 
 import 'package:provider/provider.dart';
 
@@ -66,6 +68,10 @@ class MyApp extends StatelessWidget {
       title: 'Money Management App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        progressIndicatorTheme: const ProgressIndicatorThemeData(
+          color: AppColors
+              .primaryColor, // Mengatur warna default untuk CircularProgressIndicator
+        ),
       ),
       initialRoute: '/',
       routes: {
@@ -73,10 +79,12 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
         '/form_add_income': (context) => const FormAddIncomeScreen(),
-        '/form_add_expense': (context) => const FormAddIExpenseScreen(),
+        '/form_add_expense': (context) => const FormAddExpenseScreen(),
         '/income_expanse': (context) => const IncomeExpensePage(),
         '/account_page': (context) => const AccountPage(),
-        '/goal_tab': (context) => GoalTab(),
+        '/goal_tab': (context) => const GoalTab(),
+        '/analitycs_page': (context) => const AnalyticsPage(),
+        '/profile_page': (context) => const ProfilePage(),
         '/form_add_goal': (context) => const FormAddGoalScreen(),
         '/register': (context) => const SignupScreen(),
         '/coming_soon': (context) => const ComingSoonScreen(),
@@ -92,7 +100,7 @@ class MyApp extends StatelessWidget {
         "/form_update_expense": (context) {
           final expense = ModalRoute.of(context)!.settings.arguments as Expense;
           return FormUpdateExpenseScreen(expense: expense);
-        }, 
+        },
         "/detail_expense": (context) {
           final expense = ModalRoute.of(context)!.settings.arguments as Expense;
           return DetailExpense(expense: expense);

@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:money_app_new/helper/currency_format.dart';
 import 'package:money_app_new/models/expense.dart';
 import 'package:money_app_new/models/goal.dart';
@@ -11,6 +12,7 @@ import 'package:money_app_new/screens/widgets/custome_dropdown.dart';
 import 'package:money_app_new/screens/widgets/indocator.dart';
 import 'package:money_app_new/themes/themes.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' show max;
 
 class AnalyticsPage extends StatelessWidget {
   const AnalyticsPage({super.key});
@@ -21,11 +23,32 @@ class AnalyticsPage extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: const Color(0xFF2563EB),
+          elevation: 0,
+          title: const Text(
+            'Analytics',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
           bottom: const TabBar(
             indicatorSize: TabBarIndicatorSize.tab,
-            indicatorWeight: 5,
-            indicatorColor: AppColors.primary,
-            labelColor: AppColors.primary,
+            indicatorWeight: 3,
+            indicatorColor: Colors.white,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            labelStyle: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+            unselectedLabelStyle: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
             tabs: [
               Tab(text: 'GOAL'),
               Tab(text: 'INCOME'),
@@ -33,11 +56,11 @@ class AnalyticsPage extends StatelessWidget {
             ],
           ),
         ),
-        body: TabBarView(
+        body: const TabBarView(
           children: [
             GoalTab(),
-            const IncomeTab(),
-            const ExpenseTab(),
+            IncomeTab(),
+            ExpenseTab(),
           ],
         ),
       ),
@@ -56,14 +79,14 @@ class _IncomeTabState extends State<IncomeTab> {
   int touchedIndex = -1;
   List<Income>? _incomes;
   String? _selectedDropdownValue = 'All Income';
-  final List<Color> _rainbowColors = [
-    Colors.redAccent,
-    Colors.orangeAccent,
-    Colors.yellowAccent,
-    Colors.greenAccent,
-    Colors.blueAccent,
-    Colors.indigoAccent,
-    Colors.purpleAccent,
+  final List<Color> _chartColors = [
+    const Color(0xFF2563EB), // Blue
+    const Color(0xFF10B981), // Green
+    const Color(0xFFF59E0B), // Yellow
+    const Color(0xFFEF4444), // Red
+    const Color(0xFF8B5CF6), // Purple
+    const Color(0xFFEC4899), // Pink
+    const Color(0xFF06B6D4), // Cyan
   ];
 
   @override
@@ -102,245 +125,336 @@ class _IncomeTabState extends State<IncomeTab> {
     }
   }
 
-  Color _getColor(int index) {
-    return _rainbowColors[index % _rainbowColors.length];
-  }
-
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () => _loadIncomes(_selectedDropdownValue),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            margin: const EdgeInsets.all(20),
-            child: CustomDropdown(
-              type: 'Income',
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedDropdownValue = newValue;
-                  _loadIncomes(newValue);
-                });
-              },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Container(
+              margin: const EdgeInsets.all(20),
+              child: CustomDropdown(
+                type: 'Income',
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedDropdownValue = newValue;
+                    _loadIncomes(newValue);
+                  });
+                },
+              ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: _incomes == null
-                ? const Center(child: CircularProgressIndicator())
-                : PieChart(
-                    PieChartData(
-                      pieTouchData: PieTouchData(
-                        touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                          setState(() {
-                            if (!event.isInterestedForInteractions ||
-                                pieTouchResponse == null ||
-                                pieTouchResponse.touchedSection == null) {
-                              touchedIndex = -1;
-                              return;
-                            }
-                            touchedIndex = pieTouchResponse
-                                .touchedSection!.touchedSectionIndex;
-                          });
-                        },
+            if (_incomes == null)
+              const Center(child: CircularProgressIndicator())
+            else if (_incomes!.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                    'No income data available',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ),
+              )
+            else
+              Column(
+                children: [
+                  Container(
+                    height: 300,
+                    margin: const EdgeInsets.only(top: 19, bottom: 32),
+                    padding: const EdgeInsets.all(20),
+                    child: PieChart(
+                      PieChartData(
+                        pieTouchData: PieTouchData(
+                          touchCallback:
+                              (FlTouchEvent event, pieTouchResponse) {
+                            setState(() {
+                              if (!event.isInterestedForInteractions ||
+                                  pieTouchResponse == null ||
+                                  pieTouchResponse.touchedSection == null) {
+                                touchedIndex = -1;
+                                return;
+                              }
+                              touchedIndex = pieTouchResponse
+                                  .touchedSection!.touchedSectionIndex;
+                            });
+                          },
+                        ),
+                        borderData: FlBorderData(show: false),
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 50,
+                        sections: showingSections(),
                       ),
-                      borderData: FlBorderData(show: false),
-                      sectionsSpace: 0,
-                      centerSpaceRadius: 60,
-                      sections: showingSections(),
                     ),
                   ),
-          ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 0),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Income Breakdown',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 12,
+                          children: _incomes!.asMap().entries.map((entry) {
+                            return _buildLegendItem(
+                              entry.value.name,
+                              _chartColors[entry.key % _chartColors.length],
+                              entry.value.amount,
+                              _calculatePercentage(entry.value.amount),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(
+      String label, Color color, int amount, double percentage) {
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.4,
+      child: Row(
+        children: [
           Container(
-            margin: const EdgeInsets.only(left: 30),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.start,
-              children: _incomes == null
-                  ? []
-                  : _incomes!.asMap().entries.map((entry) {
-                      return Indicator(
-                        color: _getColor(entry.key),
-                        text: entry.value.name,
-                        isSquare: true,
-                      );
-                    }).toList(),
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(height: 50),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${CurrencyFormat.convertToIdr(amount)} (${percentage.toStringAsFixed(1)}%)',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  double _calculatePercentage(int amount) {
+    final totalAmount = _incomes!.fold(0, (sum, income) => sum + income.amount);
+    return (amount / totalAmount) * 100;
   }
 
   List<PieChartSectionData> showingSections() {
-    if (_incomes == null || _incomes!.isEmpty) {
-      return [
-        PieChartSectionData(
-          color: AppColors.primary,
-          value: 100,
-          title: '0%',
-          radius: 100,
-          titleStyle: const TextStyle(fontSize: 13, color: Colors.black),
-        ),
-      ];
-    } else {
-      return _incomes!.asMap().entries.map((entry) {
-        final isTouched = entry.key == touchedIndex;
-        final fontSize = isTouched ? 16.0 : 13.0;
-        final radius = isTouched ? 110.0 : 100.0;
-        final totalAmount =
-            _incomes!.fold(0, (sum, income) => sum + income.amount);
-        final percentage = (entry.value.amount / totalAmount) * 100;
+    return _incomes!.asMap().entries.map((entry) {
+      final isTouched = entry.key == touchedIndex;
+      final fontSize = isTouched ? 20.0 : 16.0;
+      final radius = isTouched ? 110.0 : 100.0;
+      final percentage = _calculatePercentage(entry.value.amount);
 
-        return PieChartSectionData(
-          color: _getColor(entry.key),
-          value: entry.value.amount.toDouble(),
-          title:
-              '${CurrencyFormat.convertToIdr(entry.value.amount)} \n${percentage.toStringAsFixed(2)}%',
-          radius: radius,
-          titleStyle: TextStyle(
-            fontSize: fontSize,
-            color: Colors.black,
-          ),
-        );
-      }).toList();
-    }
+      return PieChartSectionData(
+        color: _chartColors[entry.key % _chartColors.length],
+        value: entry.value.amount.toDouble(),
+        title: '${percentage.toStringAsFixed(1)}%',
+        radius: radius,
+        titleStyle: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      );
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
 
-class GoalTab extends StatelessWidget {
-  GoalTab({super.key});
+class GoalTab extends StatefulWidget {
+  const GoalTab({super.key});
 
-  final GoalProvider goalProvider = GoalProvider();
+  @override
+  State<GoalTab> createState() => _GoalTabState();
+}
+
+class _GoalTabState extends State<GoalTab> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      Provider.of<GoalProvider>(context, listen: false).fetchGoals();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final goalProvider = Provider.of<GoalProvider>(context, listen: false);
-    goalProvider.fetchGoals(); // Fetch goals when the tab is built
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        await goalProvider.fetchGoals();
-      },
-      child: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: _buildHeader(),
-          ),
-          SliverToBoxAdapter(
-            child: _buildAddCalcuButton(context),
-          ),
-          _buildGoalList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 35),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            AppColors.primary,
-            Color.fromARGB(255, 133, 130, 230),
-          ],
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
-      ),
-      child: const Column(
-        children: [
-          Text(
-            "Goal",
-            style: TextStyle(color: Colors.white, fontSize: 30.0),
-          ),
-          SizedBox(height: 16.0),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddCalcuButton(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Row(
-        children: [
-          // Expanded(
-          //   child: ElevatedButton(
-          //     onPressed: () => Navigator.of(context).pushNamed("/coming_soon"),
-          //     style: ElevatedButton.styleFrom(
-          //       backgroundColor: Colors.blue,
-          //       padding: const EdgeInsets.symmetric(
-          //           vertical: 16.0, horizontal: 20.0),
-          //       shape: RoundedRectangleBorder(
-          //           borderRadius: BorderRadius.circular(10)),
-          //     ),
-          //     child: const Text('Calculator',
-          //         style: TextStyle(color: Colors.white)),
-          //   ),
-          // ),
-          Expanded(
-            flex: 1,
-            child: Container(),
-          ),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () =>
-                  Navigator.of(context).pushNamed("/form_add_goal"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                    vertical: 16.0, horizontal: 20.0),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('+ ADD', style: TextStyle(color: Colors.white)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGoalList() {
     return Consumer<GoalProvider>(
-      builder: (context, goalProvider, child) {
-        return goalProvider.isLoading
-            ? SliverList(
-                delegate: SliverChildListDelegate([
-                  const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  ),
-                ]),
-              )
-            : SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) =>
-                      _buildGoalItem(goalProvider.goals[index], context),
-                  childCount: goalProvider.goals.length,
+      builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.goals.isEmpty) {
+          return Stack(
+            children: [
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.flag_outlined,
+                      size: 64,
+                      color: AppColors.textColor.withOpacity(0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No goals yet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: AppColors.textColor.withOpacity(0.5),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-              );
+              ),
+              _buildAddButton(),
+            ],
+          );
+        }
+
+        return Stack(
+          children: [
+            ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: provider.goals.length,
+              itemBuilder: (context, index) {
+                final goal = provider.goals[index];
+                return Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/detail_goal',
+                        arguments: goal,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.flag,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  goal.name,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  goal.description,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.textColor.withOpacity(0.7),
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: AppColors.primaryColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            _buildAddButton(),
+          ],
+        );
       },
     );
   }
 
-  Widget _buildGoalItem(Goal goal, BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).pushNamed("/detail_goal", arguments: goal);
-      },
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-        child: ListTile(
-          title: Text(goal.name),
-          subtitle: Text(goal.description),
-        ),
+  Widget _buildAddButton() {
+    return Positioned(
+      right: 16,
+      bottom: 16,
+      child: FloatingActionButton(
+        heroTag: 'add_goal_fab',
+        onPressed: () => Navigator.pushNamed(context, '/form_add_goal'),
+        backgroundColor: AppColors.primaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -355,169 +469,213 @@ class ExpenseTab extends StatefulWidget {
 
 class _ExpenseTabState extends State<ExpenseTab> {
   int touchedIndex = -1;
-  List<Expense>? _expenses;
-  String? _selectedDropdownValue =
-      'All Expense'; // Atur nilai awal _selectedDropdownValue
-  final List<Color> _rainbowColors = [
-    Colors.redAccent,
-    Colors.orangeAccent,
-    Colors.yellowAccent,
-    Colors.greenAccent,
-    Colors.blueAccent,
-    Colors.indigoAccent,
-    Colors.purpleAccent,
+  final List<Color> _chartColors = [
+    const Color(0xFF2563EB), // Blue
+    const Color(0xFF10B981), // Green
+    const Color(0xFFF59E0B), // Yellow
+    const Color(0xFFEF4444), // Red
+    const Color(0xFF8B5CF6), // Purple
+    const Color(0xFFEC4899), // Pink
+    const Color(0xFF06B6D4), // Cyan
   ];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadExpenses();
+    Future.microtask(() {
+      Provider.of<ExpenseProvider>(context, listen: false).fetchExpenses();
     });
-  }
-
-  Future<void> _loadExpenses() async {
-    final expenseProvider =
-        Provider.of<ExpenseProvider>(context, listen: false);
-    await expenseProvider.fetchExpenses();
-    if (mounted) {
-      setState(() {
-        _expenses = expenseProvider.expenses;
-        // Atur nilai awal _selectedDropdownValue
-        // Filter expenses based on the selected dropdown value
-        if (_selectedDropdownValue != null) {
-          switch (_selectedDropdownValue) {
-            case 'All Expense':
-              _expenses = _expenses?.toList();
-              break;
-            case 'Earned Expense':
-              _expenses = _expenses
-                  ?.where((expense) => expense.isEarned == true)
-                  .toList();
-              debugPrint("check expense $_expenses");
-              break;
-            default:
-              // Handle default case or unknown value
-              break;
-          }
-        }
-        // Sort expenses by amount in descending order
-        _expenses?.sort((a, b) => b.amount.compareTo(a.amount));
-      });
-    }
-  }
-
-  Color _getColor(int index) {
-    return _rainbowColors[index % _rainbowColors.length];
   }
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () => _loadExpenses(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            margin: const EdgeInsets.all(20),
-            child: CustomDropdown(
-              type: 'Expense',
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedDropdownValue = newValue;
-                  _loadExpenses();
-                });
-              },
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: _expenses == null
-                ? const Center(child: CircularProgressIndicator())
-                : PieChart(
-                    PieChartData(
-                      pieTouchData: PieTouchData(
-                        touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                          setState(() {
-                            if (!event.isInterestedForInteractions ||
-                                pieTouchResponse == null ||
-                                pieTouchResponse.touchedSection == null) {
-                              touchedIndex = -1;
-                              return;
-                            }
-                            touchedIndex = pieTouchResponse
-                                .touchedSection!.touchedSectionIndex;
-                          });
-                        },
-                      ),
-                      borderData: FlBorderData(show: false),
-                      sectionsSpace: 0,
-                      centerSpaceRadius: 60,
-                      sections: showingSections(),
-                    ),
+    return Consumer<ExpenseProvider>(
+      builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.expenses.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.show_chart,
+                  size: 64,
+                  color: AppColors.textColor.withOpacity(0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No expense data yet',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: AppColors.textColor.withOpacity(0.5),
+                    fontWeight: FontWeight.w500,
                   ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Group expenses by name
+        final expenseGroups = <String, double>{};
+        for (var expense in provider.expenses) {
+          expenseGroups[expense.name] =
+              (expenseGroups[expense.name] ?? 0) + expense.amount;
+        }
+
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              Container(
+                height: 300,
+                margin: const EdgeInsets.symmetric(vertical: 21),
+                padding: const EdgeInsets.all(20),
+                child: PieChart(
+                  PieChartData(
+                    pieTouchData: PieTouchData(
+                      touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                        setState(() {
+                          if (!event.isInterestedForInteractions ||
+                              pieTouchResponse == null ||
+                              pieTouchResponse.touchedSection == null) {
+                            touchedIndex = -1;
+                            return;
+                          }
+                          touchedIndex = pieTouchResponse
+                              .touchedSection!.touchedSectionIndex;
+                        });
+                      },
+                    ),
+                    borderData: FlBorderData(show: false),
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 50,
+                    sections: showingSections(expenseGroups),
+                  ),
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 0),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Expense Breakdown',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 12,
+                      children: expenseGroups.entries
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((entry) {
+                        return _buildLegendItem(
+                          entry.value.key,
+                          _chartColors[entry.key % _chartColors.length],
+                          entry.value.value.toInt(),
+                          _calculatePercentage(
+                              entry.value.value, expenseGroups),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
+        );
+      },
+    );
+  }
+
+  List<PieChartSectionData> showingSections(Map<String, double> expenseGroups) {
+    return expenseGroups.entries.toList().asMap().entries.map((entry) {
+      final isTouched = entry.key == touchedIndex;
+      final fontSize = isTouched ? 20.0 : 16.0;
+      final radius = isTouched ? 110.0 : 100.0;
+      final percentage = _calculatePercentage(entry.value.value, expenseGroups);
+
+      return PieChartSectionData(
+        color: _chartColors[entry.key % _chartColors.length],
+        value: entry.value.value,
+        title: '${percentage.toStringAsFixed(1)}%',
+        radius: radius,
+        titleStyle: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildLegendItem(
+      String label, Color color, int amount, double percentage) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.4,
+      child: Row(
+        children: [
           Container(
-            margin: const EdgeInsets.only(left: 30),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.start,
-              children: _expenses == null
-                  ? []
-                  : _expenses!.asMap().entries.map((entry) {
-                      return Indicator(
-                        color: _getColor(entry.key),
-                        text: entry.value.name,
-                        isSquare: true,
-                      );
-                    }).toList(),
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(height: 50),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${CurrencyFormat.convertToIdr(amount)} (${percentage.toStringAsFixed(1)}%)',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  List<PieChartSectionData> showingSections() {
-    if (_expenses == null || _expenses!.isEmpty) {
-      return [
-        PieChartSectionData(
-          color: AppColors.primary,
-          value: 100,
-          title: '0%',
-          radius: 100,
-          titleStyle: const TextStyle(fontSize: 13, color: Colors.black),
-        ),
-      ];
-    } else {
-      return _expenses!.asMap().entries.map((entry) {
-        final isTouched = entry.key == touchedIndex;
-        final fontSize = isTouched ? 16.0 : 13.0;
-        final radius = isTouched ? 110.0 : 100.0;
-        final totalAmount =
-            _expenses!.fold(0, (sum, expense) => sum + expense.amount);
-        final percentage = (entry.value.amount / totalAmount) * 100;
-
-        return PieChartSectionData(
-          color: _getColor(entry.key),
-          value: entry.value.amount.toDouble(),
-          title:
-              '${CurrencyFormat.convertToIdr(entry.value.amount)}\n${percentage.toStringAsFixed(2)}%',
-          radius: radius,
-          titleStyle: TextStyle(
-            fontSize: fontSize,
-            color: Colors.black,
-          ),
-        );
-      }).toList();
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
+  double _calculatePercentage(
+      double amount, Map<String, double> expenseGroups) {
+    final total = expenseGroups.values.reduce((a, b) => a + b);
+    return (amount / total) * 100;
   }
 }

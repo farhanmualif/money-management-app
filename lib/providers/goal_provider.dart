@@ -6,44 +6,41 @@ import 'dart:convert';
 
 import 'package:money_app_new/models/goal.dart';
 
-class GoalProvider extends ChangeNotifier {
+class GoalProvider with ChangeNotifier {
+  final String? baseUrl = dotenv.env['BASE_URL'];
+  final storage = const FlutterSecureStorage();
   List<Goal> _goals = [];
-  String? error;
   bool _isLoading = false;
+  String? _error;
 
   List<Goal> get goals => _goals;
   bool get isLoading => _isLoading;
-  var storage = const FlutterSecureStorage();
-
-  final String? _baseUrl = dotenv.env['BASE_URL'];
-  // Store this securely
+  String? get error => _error;
 
   Future<void> fetchGoals() async {
-    final String? token = await storage.read(key: 'token');
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
+      final token = await storage.read(key: 'token');
       final response = await http.get(
-        Uri.parse('$_baseUrl/goal'),
+        Uri.parse('$baseUrl/goal'),
         headers: {
           'Authorization': 'Bearer $token',
         },
       );
-      if (response.statusCode <= 300) {
-        final jsonData = json.decode(response.body);
-        if (jsonData['status'] == true && jsonData['data'] != null) {
-          _goals = (jsonData['data'] as List)
-              .map((goalJson) => Goal.fromJson(goalJson))
-              .toList();
-        }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _goals =
+            (data['data'] as List).map((goal) => Goal.fromJson(goal)).toList();
       } else {
-        // Handle error
-        print('Failed to load goals: ${response.statusCode}');
+        final errorData = jsonDecode(response.body);
+        _error = errorData['message'] ?? 'Failed to fetch goals';
       }
     } catch (e) {
-      // Handle exception
-      print('Exception when fetching goals: $e');
+      _error = e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -51,36 +48,36 @@ class GoalProvider extends ChangeNotifier {
   }
 
   Future<Goal?> addGoal(String name, String description) async {
-    final String? token = await storage.read(key: 'token');
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
+      final token = await storage.read(key: 'token');
       final response = await http.post(
-        Uri.parse('$_baseUrl/goal'),
+        Uri.parse('$baseUrl/goal'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: json.encode({
-          "name": name,
-          "description": description,
+        body: jsonEncode({
+          'name': name,
+          'description': description,
         }),
       );
+      debugPrint('response create goal ${response.body}');
 
       if (response.statusCode == 201) {
-        // Assuming 201 for successful creation
-        final jsonData = json.decode(response.body);
-        if (jsonData['status'] == true && jsonData['data'] != null) {
-          final newGoal = Goal.fromJson(jsonData['data']);
-          _goals.add(newGoal);
-          notifyListeners();
-          return newGoal;
-        }
+        await fetchGoals(); // Refresh goals after adding
       } else {
-        // Handle error
-        print('Failed to add goal: ${response.statusCode}');
+        final errorData = jsonDecode(response.body);
+        _error = errorData['message'] ?? 'Failed to add goal';
       }
     } catch (e) {
-      // Handle exception
-      print('Exception when adding goal: $e');
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
     return null;
   }
@@ -89,7 +86,6 @@ class GoalProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final baseUrl = dotenv.env['BASE_URL'];
       final token = await storage.read(key: 'token');
       final url = Uri.parse('$baseUrl/goal/${goal.id}');
       final response = await http.put(
@@ -104,7 +100,7 @@ class GoalProvider extends ChangeNotifier {
 
       notifyListeners();
       if (response.statusCode <= 300) {
-        error = jsonData['message'];
+        _error = jsonData['message'];
         notifyListeners();
       } else {
         throw Exception('Failed to update expense');
@@ -119,7 +115,6 @@ class GoalProvider extends ChangeNotifier {
 
   Future<void> deleteGoal(String id) async {
     try {
-      final baseUrl = dotenv.env['BASE_URL'];
       final token = await storage.read(key: 'token');
 
       if (baseUrl == null) {
@@ -140,9 +135,7 @@ class GoalProvider extends ChangeNotifier {
 
       await fetchGoals();
     } catch (e) {
-      error = 'Error deleting income $e';
+      _error = 'Error deleting income $e';
     }
   }
-
-  // Add other methods as needed (e.g., updateGoal, deleteGoal)
 }

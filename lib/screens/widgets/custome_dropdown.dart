@@ -21,16 +21,16 @@ class _CustomDropdownState extends State<CustomDropdown> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.primary, width: 1),
+        border: Border.all(color: AppColors.primaryColor, width: 1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: DropdownButtonFormField<String>(
         decoration: const InputDecoration(
           border: InputBorder.none,
           hintText: 'Select Item',
-          hintStyle: TextStyle(color: AppColors.primary),
+          hintStyle: TextStyle(color: AppColors.primaryColor),
         ),
-        icon: const Icon(Icons.arrow_drop_down, color: AppColors.primary),
+        icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryColor),
         isExpanded: true,
         value: selectedValue,
         onChanged: (String? newValue) {

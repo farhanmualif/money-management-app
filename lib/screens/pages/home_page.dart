@@ -1,31 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
+import 'package:money_app_new/models/balance_history.dart';
+import 'package:money_app_new/screens/splash_screen.dart';
+import 'package:money_app_new/themes/themes.dart';
 import 'package:provider/provider.dart';
 import 'package:money_app_new/helper/currency_format.dart';
 import 'package:money_app_new/providers/balance_history_provider.dart';
 import 'package:money_app_new/providers/profile_provider.dart';
 import 'package:money_app_new/providers/transaction_provider.dart';
-import 'package:money_app_new/providers/upcoming_expense_provider.dart';
+import 'package:money_app_new/providers/auth_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
+  // Modern color scheme
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
+      color: AppColors.primaryColor,
       onRefresh: () async {
-        Provider.of<ProfileProvider>(context, listen: false).fetchProfile();
-        Provider.of<UpcomingExpenseProvider>(context, listen: false)
-            .fetchUpcomingExpenses();
+        await Future.delayed(const Duration(seconds: 1));
       },
       child: Scaffold(
-        appBar: _buildAppBar(context),
-        body: Column(
-          children: [
-            Expanded(
-              flex: 4,
-              child: _buildMainContent(context),
+        backgroundColor: AppColors.backgroundColor,
+        body: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            _buildHeader(context),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  const SizedBox(height: 20),
+                  _buildBalanceSection(context),
+                  const SizedBox(height: 24),
+                  _buildActionButtons(context),
+                  const SizedBox(height: 24),
+                  _buildTransactionSection(),
+                ]),
+              ),
             ),
           ],
         ),
@@ -33,108 +48,388 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  AppBar _buildAppBar(BuildContext context) {
-    return AppBar(
+  Widget _buildHeader(BuildContext context) {
+    return SliverAppBar(
+      expandedHeight: 110,
+      floating: true,
+      backgroundColor: AppColors.surfaceColor,
       elevation: 0,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerRight,
-            end: Alignment.centerLeft,
-            colors: [Color.fromARGB(255, 68, 74, 176), Color(0xFF1F2462)],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          padding: const EdgeInsets.fromLTRB(24, 60, 24, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _getGreeting(),
+                    style: TextStyle(
+                      color: AppColors.textColor.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Consumer<ProfileProvider>(
+                    builder: (_, provider, __) => Text(
+                      provider.profile?.firstName ?? 'User',
+                      style: const TextStyle(
+                        color: AppColors.textColor,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTapDown: (TapDownDetails details) {
+                  showMenu(
+                    color: Colors.white,
+                    
+                    context: context,
+                    position: RelativeRect.fromLTRB(
+                      details.globalPosition.dx,
+                      details.globalPosition.dy,
+                      details.globalPosition.dx + 1,
+                      details.globalPosition.dy + 1,
+                    ),
+                    items: [
+                      PopupMenuItem(
+                        child: const Row(
+                          children: [
+                            Icon(Icons.person_outline,
+                                color: AppColors.primaryColor),
+                            SizedBox(width: 8),
+                            Text('Profile'),
+                          ],
+                        ),
+                        onTap: () async {
+                          await _deleteCache();
+
+                          if (context.mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const SplashScreen()),
+                            );
+                          }
+                        },
+                      ),
+                      PopupMenuItem(
+                        child: const Row(
+                          children: [
+                            Icon(Icons.logout, color: AppColors.redColor),
+                            SizedBox(width: 8),
+                            Text('Logout',
+                                style: TextStyle(color: AppColors.redColor)),
+                          ],
+                        ),
+                        onTap: () => _showLogoutDialog(context),
+                      ),
+                    ],
+                  );
+                },
+                child: CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                  child: const Icon(Icons.person_outline,
+                      color: AppColors.primaryColor),
+                ),
+              ),
+            ],
           ),
         ),
       ),
-      title: const Text("Hello World",
-          style: TextStyle(color: Colors.white, fontSize: 16)),
-      actions: [
-        IconButton(
-          onPressed: () => Navigator.of(context).pushNamed('/coming_soon'),
-          icon: const Icon(Icons.notifications_none, color: Colors.white),
-        )
-      ],
     );
   }
 
-  Widget _buildHeaderGradient() {
-    return Expanded(
-      flex: 1,
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerRight,
-            end: Alignment.centerLeft,
-            colors: [Color.fromARGB(255, 68, 74, 176), Color(0xFF1F2462)],
-          ),
-          borderRadius: BorderRadius.only(bottomLeft: Radius.circular(20)),
+  Widget _buildBalanceSection(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primaryColor, AppColors.secondaryColor],
         ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryColor.withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildMainContent(BuildContext context) {
-    return Stack(
-      children: [
-        Column(
-          children: [
-            _buildHeaderGradient(),
-            Expanded(
-              flex: 4,
-              child: Container(
-                color: Colors.white,
-                child: SingleChildScrollView(
-                  child: Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Total Balance',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Consumer<BalanceHistoryProvider>(
+                  builder: (_, provider, __) => Row(
                     children: [
-                      const SizedBox(height: 85), // Memberikan ruang untuk card
-                      _buildUpcomingExpenses(),
-                      _buildRecentTransactions(),
+                      const Icon(Icons.trending_up,
+                          color: Colors.white, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        _calculateGrowthPercentage(provider.balanceHistory),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ],
                   ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Consumer<ProfileProvider>(
+            builder: (_, provider, __) => Text(
+              CurrencyFormat.convertToIdr(
+                provider.profile?.totalBalance ?? 0,
+              ),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 100,
+            child: _buildBalanceHistoryChart(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    final actions = [
+      {
+        'icon': Icons.account_balance_wallet,
+        'label': 'Account',
+        'color': AppColors.greenColor
+      },
+      {
+        'icon': Icons.swap_vert,
+        'label': 'Transaction',
+        'color': AppColors.accentColor
+      },
+      {
+        'icon': Icons.bar_chart,
+        'label': 'Analytics',
+        'color': AppColors.primaryColor
+      },
+      {
+        'icon': Icons.person,
+        'label': 'Profile',
+        'color': AppColors.secondaryColor
+      },
+    ];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: actions.map((action) {
+        return GestureDetector(
+          onTap: () {
+            if (action['label'] == 'Transaction') {
+              Navigator.of(context).pushNamed('/income_expanse');
+            } else if (action['label'] == 'Account') {
+              Navigator.of(context).pushNamed('/account_page');
+            } else if (action['label'] == 'Analytics') {
+              Navigator.of(context).pushNamed('/analitycs_page');
+            } else if (action['label'] == 'Profile') {
+              Navigator.of(context).pushNamed('/profile_page');
+            }
+          },
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: (action['color'] as Color).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  action['icon'] as IconData,
+                  color: action['color'] as Color,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                action['label'] as String,
+                style: const TextStyle(
+                  color: AppColors.textColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildTransactionSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Recent Transactions',
+              style: TextStyle(
+                color: AppColors.textColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextButton(
+              onPressed: () {},
+              child: const Text(
+                'See All',
+                style: TextStyle(
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ],
         ),
-        Positioned(
-          top: 60, // Sesuaikan posisi vertikal card
-          left: 0,
-          right: 0,
-          child: _buildBalanceCard(context),
+        const SizedBox(height: 16),
+        Consumer<TransactionProvider>(
+          builder: (_, provider, __) {
+            if (provider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: provider.transactions.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (_, index) => _buildTransactionItem(
+                provider.transactions[index],
+              ),
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _buildBalanceCard(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      elevation: 5,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Consumer<ProfileProvider>(
-              builder: (_, profileProvider, __) => Text(
-                CurrencyFormat.convertToIdr(
-                    profileProvider.profile?.totalBalance ?? 0),
-                style: const TextStyle(fontSize: 40),
-              ),
+  Widget _buildTransactionItem(dynamic transaction) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _getTransactionColor(transaction.type.toString())
+                  .withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 5),
-            Row(
+            child: Icon(
+              _getTransactionIcon(transaction.type.toString()),
+              color: _getTransactionColor(transaction.type.toString()),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Total Balance"),
-                const SizedBox(width: 50),
-                Expanded(child: _buildBalanceHistoryChart()),
+                Text(
+                  transaction.name,
+                  style: const TextStyle(
+                    color: AppColors.textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  transaction.date.toString(),
+                  style: TextStyle(
+                    color: AppColors.textColor.withOpacity(0.6),
+                    fontSize: 13,
+                  ),
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+          Text(
+            CurrencyFormat.convertToIdr(transaction.amount),
+            style: TextStyle(
+              color: _getTransactionColor(transaction.type.toString()),
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  Color _getTransactionColor(String type) {
+    switch (type.toLowerCase()) {
+      case 'income':
+        return AppColors.greenColor;
+      case 'expense':
+        return AppColors.redColor;
+      default:
+        return AppColors.primaryColor;
+    }
+  }
+
+  IconData _getTransactionIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'income':
+        return Icons.arrow_downward;
+      case 'expense':
+        return Icons.arrow_upward;
+      default:
+        return Icons.swap_horiz;
+    }
   }
 
   Widget _buildBalanceHistoryChart() {
@@ -189,102 +484,70 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildUpcomingExpenses() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 20, bottom: 15),
-          child: Text(
-            "Upcoming Expenses",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning,';
+    } else if (hour < 17) {
+      return 'Good Afternoon,';
+    } else {
+      return 'Good Evening,';
+    }
+  }
+
+  String _calculateGrowthPercentage(List<BalanceHistory> history) {
+    if (history.length < 2) return '0%';
+
+    final latestBalance = history.last.balance;
+    final previousBalance = history.first.balance;
+
+    if (previousBalance == 0) return '0%';
+
+    final percentageChange =
+        ((latestBalance - previousBalance) / previousBalance) * 100;
+    final sign = percentageChange >= 0 ? '+' : '';
+    return '$sign${percentageChange.toStringAsFixed(1)}%';
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-        ),
-        SizedBox(
-          height: 100,
-          child: Consumer<UpcomingExpenseProvider>(
-            builder: (_, provider, __) {
-              if (provider.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              return ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: provider.upcomingExpenses.length,
-                itemBuilder: (context, index) =>
-                    _buildExpenseCard(provider.upcomingExpenses[index]),
-              );
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Provider.of<AuthProvider>(context, listen: false).logout();
+              Navigator.pushReplacementNamed(context, '/login');
             },
+            child: const Text('Logout',
+                style: TextStyle(color: AppColors.redColor)),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExpenseCard(dynamic expense) {
-    return Card(
-      margin: const EdgeInsets.only(left: 20),
-      child: Container(
-        width: 150,
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(expense.name,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(CurrencyFormat.convertToIdr(expense.amount),
-                style: const TextStyle(color: Colors.green)),
-            Text(DateFormat('yyyy-MM-dd').format(DateTime.parse(expense.date)),
-                style: const TextStyle(color: Colors.grey)),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildRecentTransactions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Text(
-            "Recent Transactions",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        Consumer<TransactionProvider>(
-          builder: (_, provider, __) {
-            if (provider.isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (provider.transactions.isEmpty) {
-              return const Center(child: Text("No transaction data"));
-            }
-            return ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: provider.transactions.length,
-              itemBuilder: (_, index) =>
-                  _buildTransactionCard(provider.transactions[index]),
-            );
-          },
-        ),
-      ],
-    );
-  }
+  Future<void> _deleteCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
 
-  Widget _buildTransactionCard(dynamic transaction) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-      child: ListTile(
-        title: Text(transaction.name),
-        subtitle: Text(transaction.paymentMethod),
-        trailing: Text(
-          CurrencyFormat.convertToIdr(transaction.amount),
-          style:
-              const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
+      // Periksa apakah cache benar-benar terhapus
+      final allKeys = prefs.getKeys();
+      if (allKeys.isEmpty) {
+        debugPrint("Cache berhasil dihapus. Tidak ada key yang tersisa.");
+      } else {
+        debugPrint("Peringatan: Masih ada ${allKeys.length} key dalam cache.");
+      }
+    } catch (e) {
+      debugPrint("Error saat menghapus cache: $e");
+    }
   }
 }

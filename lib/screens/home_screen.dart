@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 56,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primary,
+              color: AppColors.primaryColor,
             ),
             child: IconButton(
                 onPressed: () {
@@ -102,13 +102,13 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(
             icon,
-            color: isSelected ? AppColors.primary : Colors.grey,
+            color: isSelected ? AppColors.primaryColor : Colors.grey,
           ),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              color: isSelected ? AppColors.primary : Colors.grey,
+              color: isSelected ? AppColors.primaryColor : Colors.grey,
             ),
           ),
         ],

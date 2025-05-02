@@ -18,30 +18,355 @@ class IncomeExpensePage extends StatefulWidget {
   State<IncomeExpensePage> createState() => _IncomeExpensePageState();
 }
 
-class _IncomeExpensePageState extends State<IncomeExpensePage> {
+class _IncomeExpensePageState extends State<IncomeExpensePage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          bottom: const TabBar(
-            indicatorSize: TabBarIndicatorSize.tab,
-            indicatorWeight: 5,
-            indicatorColor: AppColors.primary,
-            labelColor: AppColors.primary,
-            tabs: [
-              Tab(text: 'INCOME'),
-              Tab(text: 'EXPENSE'),
-            ],
+    return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      appBar: AppBar(
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.primaryColor, AppColors.secondaryColor],
+            ),
           ),
         ),
-        body: const TabBarView(
-          children: [
-            IncomeTab(),
-            ExpenseTab(),
+        title: const Text(
+          'Income & Expense',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
+          labelStyle: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+          unselectedLabelStyle: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w400, color: Colors.black),
+          tabs: const [
+            Tab(
+              icon: Icon(Icons.arrow_downward, color: Colors.white),
+              text: 'Income',
+            ),
+            Tab(
+              icon: Icon(Icons.arrow_upward, color: Colors.white),
+              text: 'Expense',
+            ),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildIncomeTab(),
+          _buildExpenseTab(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIncomeTab() {
+    return Consumer<IncomeProvider>(
+      builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.incomes?.isEmpty ?? true) {
+          return _buildEmptyState(
+              'No income records found', Icons.account_balance_wallet);
+        }
+
+        return RefreshIndicator(
+          onRefresh: () => provider.fetchIncomes(),
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: provider.incomes?.length,
+            itemBuilder: (context, index) {
+              final income = provider.incomes?[index];
+              return _buildIncomeCard(income!);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildExpenseTab() {
+    return Consumer<ExpenseProvider>(
+      builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.expenses.isEmpty) {
+          return _buildEmptyState(
+              'No expense records found', Icons.shopping_cart);
+        }
+
+        return RefreshIndicator(
+          onRefresh: () => provider.fetchExpenses(),
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: provider.expenses.length,
+            itemBuilder: (context, index) {
+              final expense = provider.expenses[index];
+              return _buildExpenseCard(expense);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildIncomeCard(Income income) {
+    return GestureDetector(
+      onTap: () =>
+          Navigator.of(context).pushNamed("/detail_income", arguments: income),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(16),
+          leading: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.greenColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child:
+                const Icon(Icons.arrow_downward, color: AppColors.greenColor),
+          ),
+          title: Text(
+            income.name,
+            style: const TextStyle(
+              color: AppColors.textColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              Text(
+                DateFormat('dd MMM yyyy').format(income.date),
+                style: TextStyle(
+                  color: AppColors.textColor.withOpacity(0.6),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: income.isEarned
+                          ? AppColors.greenColor.withOpacity(0.1)
+                          : AppColors.redColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      income.isEarned ? 'Earned' : 'Not Earned',
+                      style: TextStyle(
+                        color: income.isEarned
+                            ? AppColors.greenColor
+                            : AppColors.redColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (income.isRecurring) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Recurring - ${income.frequency}',
+                        style: const TextStyle(
+                          color: AppColors.primaryColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+          trailing: Text(
+            CurrencyFormat.convertToIdr(income.amount),
+            style: const TextStyle(
+              color: AppColors.greenColor,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpenseCard(Expense expense) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context)
+          .pushNamed("/detail_expense", arguments: expense),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(16),
+          leading: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.redColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.arrow_upward, color: AppColors.redColor),
+          ),
+          title: Text(
+            expense.name,
+            style: const TextStyle(
+              color: AppColors.textColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              Text(
+                DateFormat('dd MMM yyyy').format(expense.date),
+                style: TextStyle(
+                  color: AppColors.textColor.withOpacity(0.6),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      expense.paymentMethod,
+                      style: const TextStyle(
+                        color: AppColors.accentColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (expense.isRequring) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Recurring - ${expense.frequency}',
+                        style: const TextStyle(
+                          color: AppColors.primaryColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+          trailing: Text(
+            CurrencyFormat.convertToIdr(expense.amount),
+            style: const TextStyle(
+              color: AppColors.redColor,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message, IconData icon) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 16,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -61,7 +386,8 @@ class IncomeTab extends StatelessWidget {
           },
           child: incomeProvider.isLoading
               ? const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary))
+                  child:
+                      CircularProgressIndicator(color: AppColors.primaryColor))
               : CustomScrollView(
                   slivers: [
                     _buildHeader(),
@@ -85,7 +411,7 @@ class IncomeTab extends StatelessWidget {
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 colors: [
-                  AppColors.primary,
+                  AppColors.primaryColor,
                   Color.fromARGB(255, 80, 80, 200),
                 ],
               ),
@@ -143,7 +469,7 @@ class IncomeTab extends StatelessWidget {
                 Navigator.of(context).pushNamed("/form_add_income");
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: AppColors.primaryColor,
                 padding:
                     const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 shape: RoundedRectangleBorder(
@@ -190,7 +516,7 @@ class IncomeListItem extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
         child: ListTile(
           leading: const CircleAvatar(
-            backgroundColor: AppColors.primary,
+            backgroundColor: AppColors.primaryColor,
             child: Icon(Icons.payment, color: Colors.white),
           ),
           title: Text(income.name),
@@ -240,7 +566,7 @@ class ExpenseTab extends StatelessWidget {
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
             colors: [
-              AppColors.primary,
+              AppColors.primaryColor,
               Color.fromARGB(255, 80, 80, 200),
             ],
           ),
@@ -304,7 +630,7 @@ class ExpenseTab extends StatelessWidget {
                 Navigator.of(context).pushNamed("/form_add_expense");
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: AppColors.primaryColor,
                 padding:
                     const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 shape: RoundedRectangleBorder(
@@ -350,7 +676,7 @@ class ExpenseListItem extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
         child: ListTile(
           leading: const CircleAvatar(
-            backgroundColor: AppColors.primary,
+            backgroundColor: AppColors.primaryColor,
             child: Icon(Icons.payment, color: Colors.white),
           ),
           title: Text(expense.name),
